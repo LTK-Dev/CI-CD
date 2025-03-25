@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: hello-spring-k8s
-          image: ${DOCKERHUB_USERNAME}/hello-spring-k8s:latest
+          image: kiet123123/hello-spring-k8s:latest
           ports:
             - containerPort: 8080
           envFrom:
