@@ -1,26 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-caller
-  namespace: default
+  name: hello-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hello-caller
+      app: hello-service
   template:
     metadata:
       labels:
-        app: hello-caller
+        app: hello-service
     spec:
       containers:
-        - name: hello-caller
-          image: ${DOCKERHUB_USERNAME}/hello-caller:latest
+        - name: hello-service
+          image: ghcr.io/kiet123123/top-spring-on-kubernetes-hello-service:latest
           ports:
             - containerPort: 8080
           envFrom:
             - configMapRef:
-                name: docker-config
+                name: hello-service-config
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
@@ -33,10 +32,3 @@ spec:
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "200m"
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
