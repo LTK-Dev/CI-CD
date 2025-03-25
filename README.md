@@ -9,3 +9,5 @@ StudentID: 22024546
 
 ## ArgoCD
 ![ArgoCD.png](img%2FArgoCD.png)
+## API
+![api.png](img%2Fapi.png)
