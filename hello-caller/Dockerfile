@@ -1,14 +1,10 @@
-# Sử dụng base image Java 17
-FROM openjdk:17-jdk-slim
-
-# Thiết lập thư mục làm việc
+FROM eclipse-temurin:17-jdk-alpine as builder
 WORKDIR /app
+COPY . .
+RUN ./mvnw clean package -DskipTests
 
-# Sao chép file JAR đã build (từ Maven hoặc Gradle)
-COPY target/hello-caller.jar app.jar
-
-# Thiết lập cổng (nếu cần, thay đổi theo ứng dụng của bạn)
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Chạy ứng dụng
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"] 
