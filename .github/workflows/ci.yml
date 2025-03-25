@@ -1,51 +1,62 @@
-name: Spring Boot CI with Two Images
+name: CI Build and Push Docker
 
 on:
   push:
     branches:
-      - main  # Chạy khi push vào nhánh main
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build-and-push:
+  build:
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    steps:
-      # Bước 1: Checkout mã nguồn
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      # Bước 2: Thiết lập Java
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Bước 3: Build hello-spring-k8s với Maven
-      - name: Build hello-spring-k8s
-        working-directory: ./spring-k8s
-        run: mvn clean package -DskipTests
-
-      # Bước 4: Build hello-caller với Maven (nếu là Java)
-      - name: Build hello-caller
-        working-directory: ./caller
-        run: mvn clean package -DskipTests
-
-      # Bước 5: Build và push Docker image cho hello-spring-k8s
-      - name: Build and Push hello-spring-k8s Image
-        working-directory: ./spring-k8s
+      - name: Make mvnw executable
         run: |
-          docker build -t kiet123123/hello-spring-k8s:${{ github.sha }} .
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push kiet123123/hello-spring-k8s:${{ github.sha }}
-          docker tag kiet123123/hello-spring-k8s:${{ github.sha }} kiet123123/hello-spring-k8s:latest
-          docker push kiet123123/hello-spring-k8s:latest
+          chmod +x ./hello-spring-k8s/mvnw
+          chmod +x ./hello-caller/mvnw
 
-      # Bước 6: Build và push Docker image cho hello-caller
-      - name: Build and Push hello-caller Image
-        working-directory: ./caller
-        run: |
-          docker build -t kiet123123/hello-caller:${{ github.sha }} .
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push kiet123123/hello-caller:${{ github.sha }}
-          docker tag kiet123123/hello-caller:${{ github.sha }} kiet123123/hello-caller:latest
-          docker push kiet123123/hello-caller:latest
+      - name: Build Hello Spring K8S
+        working-directory: ./hello-spring-k8s
+        run: ./mvnw clean package
+
+      - name: Build Hello Caller
+        working-directory: ./hello-caller
+        run: ./mvnw clean package
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and push Hello Spring K8S image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hello-spring-k8s
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/hello-spring-k8s:latest
+          builder: ${{ steps.buildx.outputs.name }}
+
+      - name: Build and push Hello Caller image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hello-caller
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/hello-caller:latest
+          builder: ${{ steps.buildx.outputs.name }}

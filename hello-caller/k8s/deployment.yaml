@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-caller
+  labels:
+    app: hello-caller
+spec:
+  replicas: 1  # Số lượng pod, có thể tăng nếu cần
+  selector:
+    matchLabels:
+      app: hello-caller
+  template:
+    metadata:
+      labels:
+        app: hello-caller
+    spec:
+      containers:
+        - name: hello-caller-container
+          image: kiet123123/hello-caller:latest  # Thay yourusername bằng tài khoản Docker Hub
+          ports:
+            - containerPort: 8080  # Cổng ứng dụng lắng nghe
+          resources:
+            limits:
+              cpu: "0.5"    # Giới hạn CPU
+              memory: "512Mi"  # Giới hạn RAM
+            requests:
+              cpu: "0.2"    # Yêu cầu tối thiểu CPU
+              memory: "256Mi"  # Yêu cầu tối thiểu RAM
